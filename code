@@ -1,0 +1,111 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Load the dataset
+path = '/content/drive/MyDrive/supermarket_sales.csv'
+sales = pd.read_csv(path)
+
+# Display the first few rows of the dataframe
+sales.head()
+
+# Ensure necessary libraries are imported
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+path = '/content/drive/MyDrive/supermarket_sales.csv'
+sales = pd.read_csv(path)
+
+# Display the first few rows of the dataframe
+sales.head()
+
+# Check for missing values
+print(sales.isnull().sum())
+
+# Convert 'date' to datetime
+sales['date'] = pd.to_datetime(sales['date'])
+
+# Drop non-numeric columns that should not be part of the regression
+sales = sales.drop(columns=['Invoice ID', 'date', 'Time'])
+
+# Convert categorical columns to numerical using one-hot encoding
+sales = pd.get_dummies(sales, columns=['Branch', 'City', 'Customer type', 'Gender', 'Product line', 'Payment'], drop_first=True)
+
+# Normalize numerical features
+scaler = StandardScaler()
+numerical_features = ['Unit price', 'Quantity', 'Tax 5%', 'Total', 'cogs', 'gross margin percentage', 'gross income', 'Rating']
+sales[numerical_features] = scaler.fit_transform(sales[numerical_features])
+
+# Display the preprocessed data
+sales.head()
+
+from sklearn.cluster import KMeans
+import seaborn as sns
+
+# Extract features for clustering
+features = sales[['Unit price', 'Quantity', 'Tax 5%', 'Total', 'gross income', 'Rating']]
+
+# Determine the optimal number of clusters using the elbow method
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, random_state=42)
+    kmeans.fit(features)
+    wcss.append(kmeans.inertia_)
+
+# Plot the elbow method
+plt.figure(figsize=(10, 5))
+sns.lineplot(x=range(1, 11), y=wcss, marker='o')
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+# Apply K-Means with the optimal number of clusters
+optimal_clusters = 3  # Assuming the elbow is at 3
+kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
+sales['Cluster'] = kmeans.fit_predict(features)
+
+# Visualize the clusters
+sns.pairplot(sales, hue='Cluster', vars=['Unit price', 'Quantity', 'Total', 'gross income', 'Rating'])
+plt.show()
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Define features and target variable
+X = sales.drop('Rating', axis=1)
+y = sales['Rating']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the linear regression model
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)
+
+# Predict on the testing set
+y_pred = regressor.predict(X_test)
+
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f'Mean Squared Error: {mse}')
+print(f'R^2 Score: {r2}')
+
+# Display the coefficients
+coefficients = pd.DataFrame(regressor.coef_, X.columns, columns=['Coefficient'])
+print(coefficients)
+
+# Compare cluster centers
+print('K-Means Cluster Centers:')
+print(kmeans.cluster_centers_)
+
+# Compare regression coefficients
+print('Linear Regression Coefficients:')
+print(coefficients)
